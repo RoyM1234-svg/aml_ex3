@@ -16,7 +16,7 @@ def train_model():
     
     batch_size = 256
     learning_rate = 3e-4
-    num_epochs = 2  # Increased epochs for better plotting
+    num_epochs = 30  # Increased epochs for better plotting
     projection_dim = 512
     encoder_dim = 128
 
@@ -76,6 +76,8 @@ def train_model():
         test_epochs.append(test_epoch)
     
     plot_vicreg_losses(train_losses, test_losses, batch_numbers, test_epochs, len(train_loader))
+
+    return model
     
 
 def evaluate_model(model, loader, device, loss_fn, epoch):
@@ -112,7 +114,8 @@ def evaluate_model(model, loader, device, loss_fn, epoch):
     return total, invariance, variance, covariance, epoch
 
 def main():
-    train_model()
+    model = train_model()
+    torch.save(model.state_dict(), 'vicreg_model.pth')
 
 if __name__ == "__main__":
     main()
