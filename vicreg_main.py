@@ -41,7 +41,8 @@ def train_model():
     )
 
     train_losses = {'total': [], 'invariance': [], 'variance': [], 'covariance': []}
-    
+    test_losses = {'total': [], 'invariance': [], 'variance': [], 'covariance': []}
+    test_epochs = []
     batch_numbers = []
     
     global_batch = 0
@@ -67,14 +68,19 @@ def train_model():
             batch_numbers.append(global_batch)
             global_batch += 1
 
-        test_losses, test_epochs = evaluate_model(model, test_loader, device, loss_fn, epoch)
+        test_total, test_inv, test_var, test_cov, test_epoch = evaluate_model(model, test_loader, device, loss_fn, epoch)
+        test_losses['total'].append(test_total)
+        test_losses['invariance'].append(test_inv)
+        test_losses['variance'].append(test_var)
+        test_losses['covariance'].append(test_cov)
+        test_epochs.append(test_epoch)
     
     plot_vicreg_losses(train_losses, test_losses, batch_numbers, test_epochs, len(train_loader))
     
 
 def evaluate_model(model, loader, device, loss_fn, epoch):
-    test_losses = {'total': [], 'invariance': [], 'variance': [], 'covariance': []}
-    test_epochs = []
+    
+    
     model.eval()
 
     test_total, test_inv, test_var, test_cov = 0, 0, 0, 0
@@ -92,18 +98,18 @@ def evaluate_model(model, loader, device, loss_fn, epoch):
             test_cov += cov.item()
     
     # Average test losses
-    test_losses['total'].append(test_total / len(loader))
-    test_losses['invariance'].append(test_inv / len(loader))
-    test_losses['variance'].append(test_var / len(loader))
-    test_losses['covariance'].append(test_cov / len(loader))
-    test_epochs.append(epoch)
+    total = (test_total / len(loader))
+    invariance = (test_inv / len(loader))
+    variance = (test_var / len(loader))
+    covariance = (test_cov / len(loader))
     
-    print(f"Epoch {epoch+1} - Test Loss: {test_losses['total'][-1]:.4f}, "
-        f"Test Inv: {test_losses['invariance'][-1]:.4f}, "
-        f"Test Var: {test_losses['variance'][-1]:.4f}, "
-        f"Test Cov: {test_losses['covariance'][-1]:.4f}")
+    
+    print(f"Epoch {epoch+1} - Test Loss: {total:.4f}, "
+        f"Test Inv: {invariance:.4f}, "
+        f"Test Var: {variance:.4f}, "
+        f"Test Cov: {covariance:.4f}")
 
-    return test_losses, test_epochs
+    return total, invariance, variance, covariance, epoch
 
 def main():
     train_model()
