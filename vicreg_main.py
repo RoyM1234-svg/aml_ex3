@@ -16,7 +16,7 @@ def train_model():
     
     batch_size = 256
     learning_rate = 3e-4
-    num_epochs = 10  # Increased epochs for better plotting
+    num_epochs = 3  # Increased epochs for better plotting
     projection_dim = 512
     encoder_dim = 128
 
