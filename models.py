@@ -35,5 +35,20 @@ class Projector(nn.Module):
 
     def forward(self, x):
         return self.model(x)
+    
+
+class VICReg(nn.Module):
+    def __init__(self, encoder_dim = 128, projector_dim = 512, device='cuda'):
+        super().__init__()
+        self.encoder_dim = encoder_dim
+        self.projector_dim = projector_dim
+        self.encoder = Encoder(encoder_dim, device)
+        self.projector = Projector(encoder_dim, projector_dim)
+
+        
+    def forward(self, x):
+        y = self.encoder(x)
+        z = self.projector(y)
+        return y, z
 
 
