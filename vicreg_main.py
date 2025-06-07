@@ -1,8 +1,11 @@
 import torch
 from tqdm import tqdm
 from models import VICReg
-from utils import create_data, plot_vicreg_losses
+from utils import create_data_for_veicreg, plot_vicreg_losses, plot_transform_results
 from vicreg_loss import VICRegLoss
+from sklearn.decomposition import PCA
+import numpy as np
+from typing import Tuple
 
 
 def train_model():
@@ -16,14 +19,14 @@ def train_model():
     
     batch_size = 256
     learning_rate = 3e-4
-    num_epochs = 30  # Increased epochs for better plotting
+    num_epochs = 30  
     projection_dim = 512
     encoder_dim = 128
 
     betas = (0.9, 0.999)
     weight_decay = 1e-6
 
-    train_loader, test_loader = create_data(batch_size=batch_size)
+    train_loader, test_loader = create_data_for_veicreg(batch_size=batch_size)
 
     loss_fn = VICRegLoss(lambda_, mu, nu, gamma, epsilon)
 
@@ -79,10 +82,7 @@ def train_model():
 
     return model
     
-
 def evaluate_model(model, loader, device, loss_fn, epoch):
-    
-    
     model.eval()
 
     test_total, test_inv, test_var, test_cov = 0, 0, 0, 0
@@ -113,9 +113,50 @@ def evaluate_model(model, loader, device, loss_fn, epoch):
 
     return total, invariance, variance, covariance, epoch
 
+def apply_pca(representations: np.ndarray, n_components=2):
+    pca = PCA(n_components=n_components, random_state=42)
+    pca_result = pca.fit_transform(representations)
+    return pca_result
+
+
+def Q2():
+    device_str = "cuda" if torch.cuda.is_available() else "cpu"
+    device = torch.device(device_str)
+    
+    model = VICReg(device=device_str)
+    model.load_state_dict(torch.load('vicreg_model.pth', map_location=device))
+
+    encoder = model.encoder
+    encoder.to(device)
+
+    _, test_loader = create_data_for_veicreg()
+
+    representations, labels = extract_representations(encoder, test_loader, device)
+
+    pca_result = apply_pca(representations)
+
+    plot_transform_results(pca_result, labels)
+
+
+def extract_representations(encoder, loader, device) -> Tuple[np.ndarray, np.ndarray]:
+    representations = []
+    labels = []
+    with torch.no_grad():
+        for x, _, label in tqdm(loader):
+            x = x.to(device)
+            y = encoder(x)
+            representations.append(y.cpu().numpy())
+            labels.append(label.cpu().numpy())
+    return np.concatenate(representations, axis=0), np.concatenate(labels, axis=0)
+
 def main():
-    model = train_model()
-    torch.save(model.state_dict(), 'vicreg_model.pth')
+    # train model
+    # model = train_model()
+    # torch.save(model.state_dict(), 'vicreg_model.pth')
+
+    Q2()
+
+    
 
 if __name__ == "__main__":
     main()

@@ -3,9 +3,10 @@ from augmentations import train_transform, test_transform
 from dual_augment_data_set import DualAugmentDataSet
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
+import numpy as np
 
 
-def create_data(batch_size = 256):
+def create_data_for_veicreg(batch_size = 256):
     train_base = CIFAR10(root='./data', train=True, download=True, transform=None)
     test_base = CIFAR10(root='./data', train=False, download=True, transform=None)
 
@@ -84,3 +85,30 @@ def plot_vicreg_losses(train_losses, test_losses, batch_numbers, test_epochs, ba
         plt.tight_layout()
         plt.savefig(f'vicreg_{component}_loss.png', dpi=300, bbox_inches='tight')
         plt.show()
+
+
+def plot_transform_results(result: np.ndarray, labels: np.ndarray):
+    """Plot PCA results colored by CIFAR-10 classes"""
+    
+    # CIFAR-10 class names
+    class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer', 
+                   'dog', 'frog', 'horse', 'ship', 'truck']
+    
+    plt.figure(figsize=(12, 10))
+    
+    # Create scatter plot for each class
+    colors = plt.cm.tab10(np.linspace(0, 1, 10))
+    
+    for i in range(10):
+        mask = labels == i
+        plt.scatter(result[mask, 0], result[mask, 1], 
+                   c=[colors[i]], label=class_names[i], 
+                   alpha=0.6, s=20)
+    
+    plt.title('PCA Visualization of VICReg Representations\nCIFAR-10 Test Set')
+    plt.xlabel(f'First Principal Component')
+    plt.ylabel(f'Second Principal Component')
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.show()

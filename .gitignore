@@ -198,3 +198,5 @@ cython_debug/
 .idea/
 data/
 test.py
+
+plots/
