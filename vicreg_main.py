@@ -240,7 +240,7 @@ def extract_linear_probing_representations(encoder, loader, device) -> Tuple[tor
 
 def train_model_with_no_variance_loss():
     model = train_model(mu=0.0)
-    torch.save(model.state_dict(), 'vicreg_model_no_variance_loss.pth')
+    return model
 
 
 
@@ -252,7 +252,10 @@ def main():
     # Q2()
     # Q3()
 
-    train_model_with_no_variance_loss()
+    model = train_model_with_no_variance_loss()
+
+    torch.save(model.state_dict(), 'vicreg_model_no_variance_loss.pth')
+    
 
     
 
