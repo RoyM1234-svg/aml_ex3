@@ -176,7 +176,7 @@ def train_linear_probing_model(encoder_dim: int, train_representations, train_la
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
-    correct = 0
+    
 
     for epoch in range(num_epochs):
         classifier.train()
@@ -191,13 +191,16 @@ def train_linear_probing_model(encoder_dim: int, train_representations, train_la
         print(f"Epoch {epoch+1}/{num_epochs} - Loss: {loss.item()}")
 
         classifier.eval()
+        correct = 0
+        total = 0
         with torch.no_grad():
             for representations, labels in test_loader:
                 representations, labels = representations.to(device), labels.to(device)
                 outputs = classifier(representations)
-                print(outputs)
-                print(labels)
-                
+                predictions = torch.argmax(outputs, dim=1)
+                correct += (predictions == labels).sum().item()
+                total += len(labels)
+        print(f"Epoch {epoch+1}/{num_epochs} - Accuracy: {correct / total}")
                 
 
 
