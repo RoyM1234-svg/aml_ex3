@@ -8,6 +8,7 @@ from sklearn.manifold import TSNE
 import numpy as np
 from typing import Tuple
 import torch.nn as nn
+import faiss
 
 
 def train_model(lambda_=25.0, mu=25.0, nu=1.0, gamma=1.0, epsilon=1e-4):
@@ -132,13 +133,13 @@ def Q2():
 
     _, test_loader = create_data_for_veicreg()
 
-    representations, labels = extract_vicreg_representations(encoder, test_loader, device)
+    test_representations, labels = extract_vicreg_representations(encoder, test_loader, device)
 
-    pca_result = apply_pca(representations)
+    pca_result = apply_pca(test_representations)
 
     plot_transform_results(pca_result, labels, 'PCA Visualization of VICReg Representations\nCIFAR-10 Test Set', 'First Principal Component', 'Second Principal Component')
 
-    tsne_result = apply_tsne(representations)
+    tsne_result = apply_tsne(test_representations)
     plot_transform_results(tsne_result, labels, 't-SNE Visualization of VICReg Representations\nCIFAR-10 Test Set', 'First t-SNE Component', 'Second t-SNE Component')
 
 def extract_vicreg_representations(encoder, loader, device) -> Tuple[np.ndarray, np.ndarray]:
@@ -176,8 +177,6 @@ def train_linear_probing_model(encoder_dim: int, train_representations, train_la
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
-    
-
     for epoch in range(num_epochs):
         classifier.train()
         train_bar = tqdm(train_loader, desc=f"Epoch {epoch+1}/{num_epochs}")
@@ -201,11 +200,7 @@ def train_linear_probing_model(encoder_dim: int, train_representations, train_la
                 correct += (predictions == labels).sum().item()
                 total += len(labels)
         print(f"Epoch {epoch+1}/{num_epochs} - Accuracy: {correct / total}")
-                
-
-
-            
-            
+                       
 def Q3():
     device_str = "cuda" if torch.cuda.is_available() else "cpu"
     device = torch.device(device_str)
@@ -225,7 +220,6 @@ def Q3():
     train_linear_probing_model(
         encoder.get_encoder_dim(), train_representations, train_labels, test_representations, test_labels, device)
         
-
 def extract_linear_probing_representations(encoder, loader, device) -> Tuple[torch.Tensor, torch.Tensor]:
     encoder.eval()
     representations = []
@@ -242,6 +236,67 @@ def train_model_with_no_variance_loss():
     model = train_model(mu=0.0)
     return model
 
+def Q4():
+    device_str = "cuda" if torch.cuda.is_available() else "cpu"
+    device = torch.device(device_str)
+    
+    model = VICReg(device=device_str)
+    model.load_state_dict(torch.load('vicreg_model_no_variance_loss.pth', map_location=device))
+
+    encoder = model.encoder
+    encoder.to(device)
+
+    _, pca_test_loader = create_data_for_veicreg()
+
+    np_test_representations, np_test_labels = extract_vicreg_representations(encoder, pca_test_loader, device)
+    pca_result = apply_pca(np_test_representations)
+    plot_transform_results(pca_result, np_test_labels, 
+                           'PCA Visualization of VICReg Representations\nCIFAR-10 Test Set with No Variance Loss',
+                           'First Principal Component',
+                           'Second Principal Component')
+    
+
+    train_loader, test_loader = create_data_for_linear_probing()
+    train_representations, train_labels = extract_linear_probing_representations(encoder, train_loader, device)
+    test_representations, test_labels = extract_linear_probing_representations(encoder, test_loader, device)
+    train_linear_probing_model(encoder.get_encoder_dim(),
+                                train_representations,
+                                train_labels,
+                                test_representations,
+                                test_labels,
+                                device)
+    
+def Q5():
+    device_str = "cuda" if torch.cuda.is_available() else "cpu"
+    device = torch.device(device_str)
+
+    model = VICReg(device=device_str)
+    model.load_state_dict(torch.load('vicreg_model.pth', map_location=device))
+
+    encoder = model.encoder
+    encoder.to(device)
+
+    train_loader, test_loader = create_data_for_linear_probing()
+
+    train_representations, train_labels = extract_linear_probing_representations(encoder, train_loader, device)
+    
+    create_neighbors_array(train_representations)
+
+
+    
+
+def create_neighbors_array(representations: torch.Tensor, k: int = 2):
+    representations_np = representations.detach().cpu().numpy().astype('float32')
+    index = faiss.IndexFlatL2(representations_np.shape[1])
+    index.add(representations_np)
+    distances, indices = index.search(representations_np, k+1)
+    print(indices)
+    
+    
+
+
+
+
 
 
 def main():
@@ -252,9 +307,12 @@ def main():
     # Q2()
     # Q3()
 
-    model = train_model_with_no_variance_loss()
+    # model = train_model_with_no_variance_loss()
+    # torch.save(model.state_dict(), 'vicreg_model_no_variance_loss.pth')
 
-    torch.save(model.state_dict(), 'vicreg_model_no_variance_loss.pth')
+    # Q4()
+
+    Q5()
     
 
     
