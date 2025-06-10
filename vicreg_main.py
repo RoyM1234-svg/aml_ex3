@@ -10,14 +10,14 @@ from typing import Tuple
 import torch.nn as nn
 
 
-def train_model():
-    
+def train_model(lambda_=25.0, mu=25.0, nu=1.0, gamma=1.0, epsilon=1e-4):
+    """
     lambda_ = 25.0        # invariance loss weight (λ)
     mu = 25.0           # variance loss weight (μ) 
     nu = 1.0            # covariance loss weight (ν)
     gamma = 1.0         # variance threshold (γ)
     epsilon = 1e-4      # numerical stability (ε)
-
+    """
     
     batch_size = 256
     learning_rate = 3e-4
@@ -238,13 +238,21 @@ def extract_linear_probing_representations(encoder, loader, device) -> Tuple[tor
             labels.append(label)
     return torch.cat(representations, dim=0), torch.cat(labels, dim=0)
 
+def train_model_with_no_variance_loss():
+    model = train_model(mu=0.0)
+    torch.save(model.state_dict(), 'vicreg_model_no_variance_loss.pth')
+
+
+
 def main():
     # train model
     # model = train_model()
     # torch.save(model.state_dict(), 'vicreg_model.pth')
 
     # Q2()
-    Q3()
+    # Q3()
+
+    train_model_with_no_variance_loss()
 
     
 
