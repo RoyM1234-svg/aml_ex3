@@ -6,6 +6,7 @@ from torchvision.models import resnet18
 class Encoder(nn.Module):
     def __init__(self, D=128, device='cuda'):
         super(Encoder, self).__init__()
+        self.D = D
         self.resnet = resnet18(pretrained=False).to(device)
         self.resnet.conv1 = nn.Conv2d(3, 64, kernel_size=(3, 3), stride=1)
         self.resnet.maxpool = nn.Identity()
@@ -19,6 +20,9 @@ class Encoder(nn.Module):
 
     def encode(self, x):
         return self.forward(x)
+    
+    def get_encoder_dim(self):
+        return self.D
 
 
 class Projector(nn.Module):
@@ -52,3 +56,20 @@ class VICReg(nn.Module):
         return y, z
 
 
+class LinearProbing(nn.Module):
+    def __init__(self, encoder: Encoder, device='cuda', num_classes=10):
+        super().__init__()
+        self.encoder = encoder
+        self.classifier = nn.Linear(encoder.get_encoder_dim(), num_classes)
+
+        for param in self.encoder.parameters():
+            param.requires_grad = False
+
+    def forward(self, x):
+        with torch.no_grad():
+            y = self.encoder(x)
+        y = self.classifier(y)
+        return y
+    
+    def get_encoder(self):
+        return self.encoder
