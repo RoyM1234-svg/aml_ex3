@@ -209,10 +209,12 @@ def Q3():
 
     model = VICReg(device=device_str)
     model.load_state_dict(torch.load('vicreg_model.pth', map_location=device))
+    model.to(device)
 
     train_loader, test_loader = create_data_for_linear_probing()
 
     encoder = model.encoder
+    encoder.to(device)
 
     train_representations, train_labels = extract_linear_probing_representations(encoder, train_loader, device)
     test_representations, test_labels = extract_linear_probing_representations(encoder, test_loader, device)
