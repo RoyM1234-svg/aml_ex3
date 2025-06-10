@@ -201,3 +201,4 @@ test.py
 
 plots/
 
+*.pth

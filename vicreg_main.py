@@ -176,6 +176,8 @@ def train_linear_probing_model(encoder_dim: int, train_representations, train_la
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
+    correct = 0
+
     for epoch in range(num_epochs):
         classifier.train()
         train_bar = tqdm(train_loader, desc=f"Epoch {epoch+1}/{num_epochs}")
@@ -187,7 +189,18 @@ def train_linear_probing_model(encoder_dim: int, train_representations, train_la
             loss.backward()
             optimizer.step()
         print(f"Epoch {epoch+1}/{num_epochs} - Loss: {loss.item()}")
-            
+
+        classifier.eval()
+        with torch.no_grad():
+            for representations, labels in test_loader:
+                representations, labels = representations.to(device), labels.to(device)
+                outputs = classifier(representations)
+                print(outputs)
+                print(labels)
+                
+                
+
+
             
             
 def Q3():
