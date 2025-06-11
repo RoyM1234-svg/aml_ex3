@@ -270,7 +270,7 @@ def Q4():
                                 test_labels,
                                 device)
     
-def train_model_with_neighbors(dataset: NormalizedDataSet,neighbor_indices: torch.Tensor, device: torch.device, device_str: str) -> VICReg:
+def train_model_no_generated_neighbors(dataset: NormalizedDataSet,neighbor_indices: torch.Tensor, device: torch.device, device_str: str) -> VICReg:
     batch_size = 256
     learning_rate = 3e-4
     num_epochs = 1
@@ -311,28 +311,27 @@ def train_model_with_neighbors(dataset: NormalizedDataSet,neighbor_indices: torc
 
     return model
             
-
 def Q5():
     device_str = "cuda" if torch.cuda.is_available() else "cpu"
     device = torch.device(device_str)
 
-    # model = VICReg(device=device_str)
-    # model.load_state_dict(torch.load('vicreg_model.pth', map_location=device))
+    model = VICReg(device=device_str)
+    model.load_state_dict(torch.load('vicreg_model.pth', map_location=device))
 
-    # encoder = model.encoder
-    # encoder.to(device)
+    encoder = model.encoder
+    encoder.to(device)
 
     train_loader, test_loader = create_normalized_data_loaders()
-    # train_data_set: NormalizedDataSet = train_loader.dataset # type: ignore
+    train_data_set: NormalizedDataSet = train_loader.dataset # type: ignore
 
-    # train_representations, _ = extract_representations(encoder, train_loader, device)
+    train_representations, _ = extract_representations(encoder, train_loader, device)
     
-    # neighbor_indices = create_neighbors_array(train_representations)
+    neighbor_indices = create_neighbors_array(train_representations)
 
-    # del model
+    del model
 
-    # no_generated_neighbors_model = train_model_with_neighbors(train_data_set, neighbor_indices, device, device_str)
-    # torch.save(no_generated_neighbors_model.state_dict(), 'vicreg_model_no_generated_neighbors.pth')
+    no_generated_neighbors_model = train_model_no_generated_neighbors(train_data_set, neighbor_indices, device, device_str)
+    torch.save(no_generated_neighbors_model.state_dict(), 'vicreg_model_no_generated_neighbors.pth')
 
     no_generated_neighbors_model = VICReg(device=device_str)
     no_generated_neighbors_model.load_state_dict(torch.load('vicreg_model_no_generated_neighbors.pth', map_location=device))
@@ -349,9 +348,6 @@ def Q5():
                                 device)
     torch.save(classifier.state_dict(), 'linear_probing_model_no_generated_neighbors.pth')
     
-    
-    
-
 def create_neighbors_array(representations: torch.Tensor, k: int = 3) -> torch.Tensor:
     representations_np = representations.detach().cpu().numpy().astype('float32')
     index = faiss.IndexFlatL2(representations_np.shape[1])
@@ -361,6 +357,8 @@ def create_neighbors_array(representations: torch.Tensor, k: int = 3) -> torch.T
 
     return torch.from_numpy(neighbor_indices)
 
+def Q6():
+    pass
 
 def main():
     # train model
@@ -374,8 +372,9 @@ def main():
     # torch.save(model.state_dict(), 'vicreg_model_no_variance_loss.pth')
 
     # Q4()
+    # Q5()
 
-    Q5()
+    Q6()
     
     
     
