@@ -35,6 +35,9 @@ class NormalizedDataSet(Dataset):
         image = self.transform(image)
         return image, label
     
+    def get_image_by_index(self, idx):
+        return self.base_dataset[idx][0]
+    
 
 class NeighborPairDataset(Dataset):
     def __init__(self, base_dataset: NormalizedDataSet, neighbor_indices: torch.Tensor):

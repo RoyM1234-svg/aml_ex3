@@ -377,7 +377,17 @@ def Q7():
         images_representations, _ = vicreg_model(images_dataset)
 
     indices = find_nearest_neighbors(images_representations, train_representations)
-    print(indices)
+    
+    nearest_neighbors = []
+    train_dataset = train_loader.dataset
+    for i in range(len(images)):
+        nearest_neighbors.append([train_dataset.get_image_by_index(index) for index in indices[i]]) # type: ignore
+    
+    
+    
+    
+
+
 
 def find_nearest_neighbors(query_representations: torch.Tensor, reference_representations: torch.Tensor, k: int = 5):
     distances = torch.cdist(query_representations, reference_representations)

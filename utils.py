@@ -126,3 +126,51 @@ def plot_transform_results(result: np.ndarray, labels: np.ndarray, title: str, x
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.show()
+
+
+def plot_images_with_neighbors(images, nearest_neighbors, class_names=None, save_path=None):
+    """
+    Plot original images alongside their nearest neighbors.
+    
+    Args:
+        images: List of PIL Images (original images)
+        nearest_neighbors: List of lists, where each inner list contains neighbor PIL Images
+        class_names: Optional list of class names for labeling
+        save_path: Optional path to save the plot
+    """
+    if class_names is None:
+        class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer', 
+                       'dog', 'frog', 'horse', 'ship', 'truck']
+    
+    num_images = len(images)
+    num_neighbors = len(nearest_neighbors[0]) if nearest_neighbors else 0
+    
+    # Create subplot grid: each row shows original + neighbors
+    fig, axes = plt.subplots(num_images, num_neighbors + 1, 
+                            figsize=((num_neighbors + 1) * 2, num_images * 2))
+    
+    # Handle case where there's only one image
+    if num_images == 1:
+        axes = axes.reshape(1, -1)
+    
+    for i in range(num_images):
+        # Plot original image
+        axes[i, 0].imshow(images[i])
+        axes[i, 0].set_title(f'Original\nClass: {class_names[i] if i < len(class_names) else i}', 
+                            fontsize=10, fontweight='bold')
+        axes[i, 0].axis('off')
+        
+        # Plot nearest neighbors
+        for j in range(num_neighbors):
+            if j < len(nearest_neighbors[i]):
+                axes[i, j + 1].imshow(nearest_neighbors[i][j])
+                axes[i, j + 1].set_title(f'Neighbor {j + 1}', fontsize=10)
+            axes[i, j + 1].axis('off')
+    
+    plt.suptitle('Original Images and Their Nearest Neighbors', fontsize=16, fontweight='bold')
+    plt.tight_layout()
+    
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    
+    plt.show()
