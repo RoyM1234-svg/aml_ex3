@@ -362,17 +362,17 @@ def Q6():
 
 def main():
     # train model
-    # model = train_model()
-    # torch.save(model.state_dict(), 'vicreg_model.pth')
+    model = train_model()
+    torch.save(model.state_dict(), 'vicreg_model.pth')
 
-    # Q2()
-    # Q3()
+    Q2()
+    Q3()
 
-    # model = train_model_with_no_variance_loss()
-    # torch.save(model.state_dict(), 'vicreg_model_no_variance_loss.pth')
+    model = train_model_with_no_variance_loss()
+    torch.save(model.state_dict(), 'vicreg_model_no_variance_loss.pth')
 
-    # Q4()
-    # Q5()
+    Q4()
+    Q5()
 
     Q6()
     
