@@ -421,10 +421,18 @@ def Q7():
 def find_neighbors(
         query_representations: torch.Tensor,
         reference_representations: torch.Tensor,
-        k: int = 5, furthest: bool = False
+        k: int = 5, furthest: bool = False,
         ):
     distances = torch.cdist(query_representations, reference_representations)
-    _, indices = distances.topk(k, dim=1, largest=furthest)
+    
+    k_search = k + 1 
+    _, indices = distances.topk(k_search, dim=1, largest=furthest)
+    
+    if not furthest:
+        indices = indices[:, 1:]  
+    else:
+        indices = indices[:, :-1] 
+    
     return indices
     
     
