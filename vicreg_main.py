@@ -433,10 +433,7 @@ def find_neighbors(
         indices = indices[:, :-1] 
     
     return indices
-    
-    
-
-    
+      
 
 def main():
     # # train model
@@ -450,9 +447,8 @@ def main():
     # torch.save(model.state_dict(), 'vicreg_model_no_variance_loss.pth')
 
     # Q4()
-    Q5()
-
-    # Q7()
+    # Q5()
+    Q7()
 
     
     
