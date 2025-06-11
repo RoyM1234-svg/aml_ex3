@@ -2,7 +2,7 @@ import torch
 from tqdm import tqdm
 from custom_datasets import NeighborPairDataset, NormalizedDataSet
 from models import VICReg
-from utils import create_normalized_data_loaders, create_data_for_veicreg, plot_vicreg_losses, plot_transform_results
+from utils import choose_image_from_each_class, create_normalized_data_loaders, create_data_for_veicreg, plot_vicreg_losses, plot_transform_results
 from vicreg_loss import VICRegLoss
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
@@ -10,7 +10,9 @@ import numpy as np
 from typing import Tuple
 import torch.nn as nn
 from torch.utils.data import DataLoader
-import faiss
+from augmentations import test_transform
+from torchvision.transforms import ToTensor
+# import faiss
 
 
 def train_model(lambda_=25.0, mu=25.0, nu=1.0, gamma=1.0, epsilon=1e-4):
@@ -357,24 +359,52 @@ def create_neighbors_array(representations: torch.Tensor, k: int = 3) -> torch.T
 
     return torch.from_numpy(neighbor_indices)
 
-def Q6():
-    pass
+def Q7():
+    device_str = "cuda" if torch.cuda.is_available() else "cpu"
+    device = torch.device(device_str)
+
+    images, labels = choose_image_from_each_class()
+    vicreg_model = VICReg(device=device_str)
+    vicreg_model.load_state_dict(torch.load('vicreg_model.pth', map_location=device))
+    vicreg_model.to(device)
+
+    train_loader, _ = create_normalized_data_loaders()
+    train_representations, _ = extract_representations(vicreg_model.encoder, train_loader, device)
+
+    images_dataset = torch.stack([test_transform(ToTensor()(image)) for image in images])
+    with torch.no_grad():
+        images_dataset = images_dataset.to(device)
+        images_representations, _ = vicreg_model(images_dataset)
+
+    indices = find_nearest_neighbors(images_representations, train_representations)
+    print(indices)
+
+def find_nearest_neighbors(query_representations: torch.Tensor, reference_representations: torch.Tensor, k: int = 5):
+    distances = torch.cdist(query_representations, reference_representations)
+    _, indices = distances.topk(k, dim=1, largest=False)
+    return indices
+    
+    
+
+    
 
 def main():
-    # train model
-    model = train_model()
-    torch.save(model.state_dict(), 'vicreg_model.pth')
+    # # train model
+    # model = train_model()
+    # torch.save(model.state_dict(), 'vicreg_model.pth')
 
-    Q2()
-    Q3()
+    # Q2()
+    # Q3()
 
-    model = train_model_with_no_variance_loss()
-    torch.save(model.state_dict(), 'vicreg_model_no_variance_loss.pth')
+    # model = train_model_with_no_variance_loss()
+    # torch.save(model.state_dict(), 'vicreg_model_no_variance_loss.pth')
 
-    Q4()
-    Q5()
+    # Q4()
+    # Q5()
 
-    Q6()
+    Q7()
+
+    
     
     
     

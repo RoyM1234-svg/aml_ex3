@@ -2,8 +2,23 @@ from torchvision.datasets import CIFAR10
 from augmentations import train_transform, test_transform
 from custom_datasets import DualAugmentDataSet, NormalizedDataSet
 from torch.utils.data import DataLoader
+from PIL import Image
 import matplotlib.pyplot as plt
 import numpy as np
+
+def choose_image_from_each_class() -> tuple[list[Image.Image], list[int]]:
+    dataset = CIFAR10(root='./data', train=True, download=True)
+
+    images = []
+    labels = []
+    for i in range(len(dataset)):
+        if len(images) == 10:
+            break
+        image, label = dataset[i]
+        if label not in labels:
+            images.append(image)
+            labels.append(label)
+    return images, labels
 
 
 def create_data_for_veicreg(batch_size = 256):
