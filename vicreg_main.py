@@ -368,6 +368,7 @@ def Q7_helper(model: VICReg,
               labels: list[int],
               train_loader: DataLoader,
               train_representations: torch.Tensor,
+              model_name: str,
               ):
     
     images_dataset = torch.stack([test_transform(ToTensor()(image)) for image in images])
@@ -387,14 +388,14 @@ def Q7_helper(model: VICReg,
                    'dog', 'frog', 'horse', 'ship', 'truck']
     actual_class_names = [class_names[label] for label in labels]
     
-    plot_images_with_neighbors(images, nearest_neighbors, title="Original Images and Their Nearest Neighbors", class_names=actual_class_names, save_path="original_images_and_nearest_neighbors.png")
+    plot_images_with_neighbors(images, nearest_neighbors, title=f"{model_name} Original Images and Their Nearest Neighbors", class_names=actual_class_names, save_path=f"{model_name}_original_images_and_nearest_neighbors.png")
 
     furthest_indices = find_neighbors(images_representations, train_representations, furthest=True)
     furthest_neighbors = []
     for i in range(len(images)):
         furthest_neighbors.append([train_dataset.get_image_by_index(index.item()) for index in furthest_indices[i]]) # type: ignore
     
-    plot_images_with_neighbors(images, furthest_neighbors, title="Original Images and Their Furthest Neighbors", class_names=actual_class_names, save_path="original_images_and_furthest_neighbors.png")
+    plot_images_with_neighbors(images, furthest_neighbors, title=f"{model_name} Original Images and Their Furthest Neighbors", class_names=actual_class_names, save_path=f"{model_name}_original_images_and_furthest_neighbors.png")
 
 def Q7():
     device_str = "cuda" if torch.cuda.is_available() else "cpu"
@@ -408,13 +409,13 @@ def Q7():
     train_loader, _ = create_normalized_data_loaders(shuffle_train=False)
     train_representations, _ = extract_representations(vicreg_model.encoder, train_loader, device)
 
-    Q7_helper(vicreg_model, device, images, labels, train_loader, train_representations)
+    Q7_helper(vicreg_model, device, images, labels, train_loader, train_representations, "VICReg")
 
     del vicreg_model
     no_generated_neighbors_model = VICReg(device=device_str)
     no_generated_neighbors_model.load_state_dict(torch.load('vicreg_model_no_generated_neighbors.pth', map_location=device))
     no_generated_neighbors_model.to(device)
-    Q7_helper(no_generated_neighbors_model, device, images, labels, train_loader, train_representations)
+    Q7_helper(no_generated_neighbors_model, device, images, labels, train_loader, train_representations, "VICReg with No Generated Neighbors")
 
 
 def find_neighbors(
