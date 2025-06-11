@@ -13,6 +13,7 @@ from torch.utils.data import DataLoader
 from augmentations import test_transform
 from torchvision.transforms import ToTensor
 from utils import plot_images_with_neighbors
+from PIL import Image
 import faiss
 
 
@@ -360,18 +361,20 @@ def create_neighbors_array(representations: torch.Tensor, k: int = 3) -> torch.T
 
     return torch.from_numpy(neighbor_indices)
 
-def Q7(vicreg_model: VICReg, device: torch.device, device_str: str):
-    images, labels = choose_image_from_each_class()
+
+def Q7_helper(model: VICReg,
+              device: torch.device,
+              images: list[Image.Image],
+              labels: list[int],
+              train_loader: DataLoader,
+              train_representations: torch.Tensor,
+              ):
     
-
-    train_loader, _ = create_normalized_data_loaders(shuffle_train=False)
-    train_representations, _ = extract_representations(vicreg_model.encoder, train_loader, device)
-
     images_dataset = torch.stack([test_transform(ToTensor()(image)) for image in images])
     with torch.no_grad():
-        vicreg_model.eval()
+        model.eval()
         images_dataset = images_dataset.to(device)
-        images_representations, _ = vicreg_model(images_dataset)
+        images_representations, _ = model(images_dataset)
 
     indices = find_neighbors(images_representations, train_representations, furthest=False)
     
@@ -393,6 +396,25 @@ def Q7(vicreg_model: VICReg, device: torch.device, device_str: str):
     
     plot_images_with_neighbors(images, furthest_neighbors, title="Original Images and Their Furthest Neighbors", class_names=actual_class_names, save_path="original_images_and_furthest_neighbors.png")
 
+def Q7():
+    device_str = "cuda" if torch.cuda.is_available() else "cpu"
+    device = torch.device(device_str)
+
+    images, labels = choose_image_from_each_class()
+    vicreg_model = VICReg(device=device_str)
+    vicreg_model.load_state_dict(torch.load('vicreg_model.pth', map_location=device))
+    vicreg_model.to(device)
+
+    train_loader, _ = create_normalized_data_loaders(shuffle_train=False)
+    train_representations, _ = extract_representations(vicreg_model.encoder, train_loader, device)
+
+    Q7_helper(vicreg_model, device, images, labels, train_loader, train_representations)
+
+    del vicreg_model
+    no_generated_neighbors_model = VICReg(device=device_str)
+    no_generated_neighbors_model.load_state_dict(torch.load('vicreg_model_no_generated_neighbors.pth', map_location=device))
+    no_generated_neighbors_model.to(device)
+    Q7_helper(no_generated_neighbors_model, device, images, labels, train_loader, train_representations)
 
 
 def find_neighbors(
@@ -421,18 +443,8 @@ def main():
 
     # Q4()
     # Q5()
-    device_str = "cuda" if torch.cuda.is_available() else "cpu"
-    device = torch.device(device_str)
 
-    vicreg_model = VICReg(device=device_str)
-    vicreg_model.load_state_dict(torch.load('vicreg_model.pth', map_location=device))
-    vicreg_model.to(device)
-    Q7(vicreg_model, device, device_str)
-
-    no_generated_neighbors_model = VICReg(device=device_str)
-    no_generated_neighbors_model.load_state_dict(torch.load('vicreg_model_no_generated_neighbors.pth', map_location=device))
-    no_generated_neighbors_model.to(device)
-    Q7(no_generated_neighbors_model, device, device_str)
+    Q7()
 
     
     
