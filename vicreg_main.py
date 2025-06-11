@@ -1,13 +1,15 @@
 import torch
 from tqdm import tqdm
+from custom_datasets import NeighborPairDataset, NormalizedDataSet
 from models import VICReg
-from utils import create_data_for_linear_probing, create_data_for_veicreg, plot_vicreg_losses, plot_transform_results
+from utils import create_normalized_data_loaders, create_data_for_veicreg, plot_vicreg_losses, plot_transform_results
 from vicreg_loss import VICRegLoss
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 import numpy as np
 from typing import Tuple
 import torch.nn as nn
+from torch.utils.data import DataLoader
 import faiss
 
 
@@ -209,18 +211,18 @@ def Q3():
     model.load_state_dict(torch.load('vicreg_model.pth', map_location=device))
     model.to(device)
 
-    train_loader, test_loader = create_data_for_linear_probing()
+    train_loader, test_loader = create_normalized_data_loaders()
 
     encoder = model.encoder
     encoder.to(device)
 
-    train_representations, train_labels = extract_linear_probing_representations(encoder, train_loader, device)
-    test_representations, test_labels = extract_linear_probing_representations(encoder, test_loader, device)
+    train_representations, train_labels = extract_representations(encoder, train_loader, device)
+    test_representations, test_labels = extract_representations(encoder, test_loader, device)
 
     train_linear_probing_model(
         encoder.get_encoder_dim(), train_representations, train_labels, test_representations, test_labels, device)
         
-def extract_linear_probing_representations(encoder, loader, device) -> Tuple[torch.Tensor, torch.Tensor]:
+def extract_representations(encoder, loader, device) -> Tuple[torch.Tensor, torch.Tensor]:
     encoder.eval()
     representations = []
     labels = []
@@ -256,9 +258,9 @@ def Q4():
                            'Second Principal Component')
     
 
-    train_loader, test_loader = create_data_for_linear_probing()
-    train_representations, train_labels = extract_linear_probing_representations(encoder, train_loader, device)
-    test_representations, test_labels = extract_linear_probing_representations(encoder, test_loader, device)
+    train_loader, test_loader = create_normalized_data_loaders()
+    train_representations, train_labels = extract_representations(encoder, train_loader, device)
+    test_representations, test_labels = extract_representations(encoder, test_loader, device)
     train_linear_probing_model(encoder.get_encoder_dim(),
                                 train_representations,
                                 train_labels,
@@ -266,6 +268,48 @@ def Q4():
                                 test_labels,
                                 device)
     
+def train_model_with_neighbors(dataset: NormalizedDataSet,neighbor_indices: torch.Tensor, device: torch.device, device_str: str) -> VICReg:
+    batch_size = 256
+    learning_rate = 3e-4
+    num_epochs = 1
+    projection_dim = 512
+    encoder_dim = 128
+
+    betas = (0.9, 0.999)
+    weight_decay = 1e-6
+
+    loss_fn = VICRegLoss(lambda_=25.0, mu=25.0, nu=1.0, gamma=1.0, epsilon=1e-4)
+
+    model = VICReg(encoder_dim, projection_dim, device_str)
+    model.to(device)
+
+    optimizer = torch.optim.Adam(
+        model.parameters(), 
+        lr=learning_rate, 
+        betas=betas, 
+        weight_decay=weight_decay
+    )
+
+    neighbor_dataset = NeighborPairDataset(dataset, neighbor_indices)
+    train_loader = DataLoader(neighbor_dataset, batch_size=batch_size, shuffle=True)
+    
+
+    for epoch in range(num_epochs):
+        model.train()
+        train_bar = tqdm(train_loader, desc=f"Epoch {epoch+1}/{num_epochs}")
+        for batch_idx, (base_image, neighbor_image) in enumerate(train_bar):
+            base_image, neighbor_image = base_image.to(device), neighbor_image.to(device)
+            optimizer.zero_grad()
+            _, z1 = model(base_image)
+            _, z2 = model(neighbor_image)
+            loss, _, _, _ = loss_fn(z1, z2)
+            loss.backward()
+            optimizer.step()
+            print(f"Batch {batch_idx+1}/{len(train_loader)} - Loss: {loss.item()}")
+
+    return model
+            
+
 def Q5():
     device_str = "cuda" if torch.cuda.is_available() else "cpu"
     device = torch.device(device_str)
@@ -276,27 +320,27 @@ def Q5():
     encoder = model.encoder
     encoder.to(device)
 
-    train_loader, test_loader = create_data_for_linear_probing()
+    train_loader, _ = create_normalized_data_loaders()
+    train_data_set: NormalizedDataSet = train_loader.dataset # type: ignore
 
-    train_representations, train_labels = extract_linear_probing_representations(encoder, train_loader, device)
+    train_representations, _ = extract_representations(encoder, train_loader, device)
     
-    create_neighbors_array(train_representations)
+    neighbor_indices = create_neighbors_array(train_representations)
 
+    del model
 
+    no_generated_neighbors_model = train_model_with_neighbors(train_data_set, neighbor_indices, device, device_str)
+    torch.save(no_generated_neighbors_model.state_dict(), 'vicreg_model_no_generated_neighbors.pth')
     
 
-def create_neighbors_array(representations: torch.Tensor, k: int = 2):
+def create_neighbors_array(representations: torch.Tensor, k: int = 2) -> torch.Tensor:
     representations_np = representations.detach().cpu().numpy().astype('float32')
     index = faiss.IndexFlatL2(representations_np.shape[1])
     index.add(representations_np)
-    distances, indices = index.search(representations_np, k+1)
-    print(indices)
-    
-    
+    _, indices = index.search(representations_np, k+1)
+    neighbor_indices = indices[:, 1:4] 
 
-
-
-
+    return torch.from_numpy(neighbor_indices)
 
 
 def main():

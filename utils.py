@@ -1,6 +1,6 @@
 from torchvision.datasets import CIFAR10
 from augmentations import train_transform, test_transform
-from custom_datasets import DualAugmentDataSet, LinearProbingDataSet
+from custom_datasets import DualAugmentDataSet, NormalizedDataSet
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 import numpy as np
@@ -19,14 +19,14 @@ def create_data_for_veicreg(batch_size = 256):
     return train_loader, test_loader
 
 
-def create_data_for_linear_probing(batch_size = 256):
+def create_normalized_data_loaders(batch_size = 256):
     trainset = CIFAR10(root='./data', train=True, 
                                        transform=None)
     testset = CIFAR10(root='./data', train=False,
                                       transform=None)
-    train_dataset = LinearProbingDataSet(trainset, test_transform)
-    test_dataset = LinearProbingDataSet(testset, test_transform)
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
+    train_dataset = NormalizedDataSet(trainset, test_transform)
+    test_dataset = NormalizedDataSet(testset, test_transform)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
     return train_loader, test_loader
 
