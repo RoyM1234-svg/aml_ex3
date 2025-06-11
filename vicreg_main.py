@@ -333,7 +333,7 @@ def Q5():
     torch.save(no_generated_neighbors_model.state_dict(), 'vicreg_model_no_generated_neighbors.pth')
     
 
-def create_neighbors_array(representations: torch.Tensor, k: int = 2) -> torch.Tensor:
+def create_neighbors_array(representations: torch.Tensor, k: int = 3) -> torch.Tensor:
     representations_np = representations.detach().cpu().numpy().astype('float32')
     index = faiss.IndexFlatL2(representations_np.shape[1])
     index.add(representations_np)
