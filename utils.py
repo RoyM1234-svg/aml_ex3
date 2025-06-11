@@ -34,14 +34,14 @@ def create_data_for_veicreg(batch_size = 256):
     return train_loader, test_loader
 
 
-def create_normalized_data_loaders(batch_size = 256):
+def create_normalized_data_loaders(batch_size = 256, shuffle_train: bool = True):
     trainset = CIFAR10(root='./data', train=True, 
                                        transform=None)
     testset = CIFAR10(root='./data', train=False,
                                       transform=None)
     train_dataset = NormalizedDataSet(trainset, test_transform)
     test_dataset = NormalizedDataSet(testset, test_transform)
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle_train)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
     return train_loader, test_loader
 

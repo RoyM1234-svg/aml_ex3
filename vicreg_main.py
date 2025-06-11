@@ -364,16 +364,17 @@ def Q7():
     device_str = "cuda" if torch.cuda.is_available() else "cpu"
     device = torch.device(device_str)
 
-    images, _ = choose_image_from_each_class()
+    images, labels = choose_image_from_each_class()
     vicreg_model = VICReg(device=device_str)
     vicreg_model.load_state_dict(torch.load('vicreg_model.pth', map_location=device))
     vicreg_model.to(device)
 
-    train_loader, _ = create_normalized_data_loaders()
+    train_loader, _ = create_normalized_data_loaders(shuffle_train=False)
     train_representations, _ = extract_representations(vicreg_model.encoder, train_loader, device)
 
     images_dataset = torch.stack([test_transform(ToTensor()(image)) for image in images])
     with torch.no_grad():
+        vicreg_model.eval()
         images_dataset = images_dataset.to(device)
         images_representations, _ = vicreg_model(images_dataset)
 
@@ -382,10 +383,14 @@ def Q7():
     nearest_neighbors = []
     train_dataset = train_loader.dataset
     for i in range(len(images)):
-        nearest_neighbors.append([train_dataset.get_image_by_index(index) for index in indices[i]]) # type: ignore
+        nearest_neighbors.append([train_dataset.get_image_by_index(index.item()) for index in indices[i]]) # type: ignore
+
+    class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer', 
+                   'dog', 'frog', 'horse', 'ship', 'truck']
+    actual_class_names = [class_names[label] for label in labels]
     
-    plot_images_with_neighbors(images, nearest_neighbors, title="Original Images and Their Nearest Neighbors", save_path="original_images_and_nearest_neighbors.png")
-    
+    plot_images_with_neighbors(images, nearest_neighbors, title="Original Images and Their Nearest Neighbors", class_names=actual_class_names, save_path="original_images_and_nearest_neighbors.png")
+
 
 
 def find_neighbors(
