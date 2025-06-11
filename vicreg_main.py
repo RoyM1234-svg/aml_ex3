@@ -189,7 +189,7 @@ def train_linear_probing_model(encoder_dim: int, train_representations, train_la
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
-        print(f"Epoch {epoch+1}/{num_epochs} - Loss: {loss.item()}")
+        print(f"Epoch {epoch+1}/{num_epochs} - Train Loss: {loss.item()}")
 
         classifier.eval()
         correct = 0
@@ -201,7 +201,9 @@ def train_linear_probing_model(encoder_dim: int, train_representations, train_la
                 predictions = torch.argmax(outputs, dim=1)
                 correct += (predictions == labels).sum().item()
                 total += len(labels)
-        print(f"Epoch {epoch+1}/{num_epochs} - Accuracy: {correct / total}")
+        print(f"Epoch {epoch+1}/{num_epochs} - Test Accuracy: {correct / total}")
+
+    return classifier
                        
 def Q3():
     device_str = "cuda" if torch.cuda.is_available() else "cpu"
@@ -314,23 +316,40 @@ def Q5():
     device_str = "cuda" if torch.cuda.is_available() else "cpu"
     device = torch.device(device_str)
 
-    model = VICReg(device=device_str)
-    model.load_state_dict(torch.load('vicreg_model.pth', map_location=device))
+    # model = VICReg(device=device_str)
+    # model.load_state_dict(torch.load('vicreg_model.pth', map_location=device))
 
-    encoder = model.encoder
-    encoder.to(device)
+    # encoder = model.encoder
+    # encoder.to(device)
 
-    train_loader, _ = create_normalized_data_loaders()
-    train_data_set: NormalizedDataSet = train_loader.dataset # type: ignore
+    train_loader, test_loader = create_normalized_data_loaders()
+    # train_data_set: NormalizedDataSet = train_loader.dataset # type: ignore
 
-    train_representations, _ = extract_representations(encoder, train_loader, device)
+    # train_representations, _ = extract_representations(encoder, train_loader, device)
     
-    neighbor_indices = create_neighbors_array(train_representations)
+    # neighbor_indices = create_neighbors_array(train_representations)
 
-    del model
+    # del model
 
-    no_generated_neighbors_model = train_model_with_neighbors(train_data_set, neighbor_indices, device, device_str)
-    torch.save(no_generated_neighbors_model.state_dict(), 'vicreg_model_no_generated_neighbors.pth')
+    # no_generated_neighbors_model = train_model_with_neighbors(train_data_set, neighbor_indices, device, device_str)
+    # torch.save(no_generated_neighbors_model.state_dict(), 'vicreg_model_no_generated_neighbors.pth')
+
+    no_generated_neighbors_model = VICReg(device=device_str)
+    no_generated_neighbors_model.load_state_dict(torch.load('vicreg_model_no_generated_neighbors.pth', map_location=device))
+    no_generated_neighbors_model.to(device)
+    
+    
+    train_representations, train_labels = extract_representations(no_generated_neighbors_model.encoder, train_loader, device)
+    test_representations, test_labels = extract_representations(no_generated_neighbors_model.encoder, test_loader, device)
+    classifier = train_linear_probing_model(no_generated_neighbors_model.encoder.get_encoder_dim(),
+                                train_representations,
+                                train_labels,
+                                test_representations,
+                                test_labels,
+                                device)
+    torch.save(classifier.state_dict(), 'linear_probing_model_no_generated_neighbors.pth')
+    
+    
     
 
 def create_neighbors_array(representations: torch.Tensor, k: int = 3) -> torch.Tensor:
@@ -357,6 +376,9 @@ def main():
     # Q4()
 
     Q5()
+    
+    
+    
     
 
     
