@@ -12,7 +12,8 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from augmentations import test_transform
 from torchvision.transforms import ToTensor
-# import faiss
+from utils import plot_images_with_neighbors
+import faiss
 
 
 def train_model(lambda_=25.0, mu=25.0, nu=1.0, gamma=1.0, epsilon=1e-4):
@@ -384,7 +385,7 @@ def Q7():
         nearest_neighbors.append([train_dataset.get_image_by_index(index) for index in indices[i]]) # type: ignore
     
     
-    
+    plot_images_with_neighbors(images, nearest_neighbors)
     
 
 
