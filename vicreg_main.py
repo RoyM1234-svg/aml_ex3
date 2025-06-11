@@ -364,7 +364,7 @@ def Q7():
     device_str = "cuda" if torch.cuda.is_available() else "cpu"
     device = torch.device(device_str)
 
-    images, labels = choose_image_from_each_class()
+    images, _ = choose_image_from_each_class()
     vicreg_model = VICReg(device=device_str)
     vicreg_model.load_state_dict(torch.load('vicreg_model.pth', map_location=device))
     vicreg_model.to(device)
@@ -377,22 +377,24 @@ def Q7():
         images_dataset = images_dataset.to(device)
         images_representations, _ = vicreg_model(images_dataset)
 
-    indices = find_nearest_neighbors(images_representations, train_representations)
+    indices = find_neighbors(images_representations, train_representations, furthest=False)
     
     nearest_neighbors = []
     train_dataset = train_loader.dataset
     for i in range(len(images)):
         nearest_neighbors.append([train_dataset.get_image_by_index(index) for index in indices[i]]) # type: ignore
     
+    plot_images_with_neighbors(images, nearest_neighbors, title="Original Images and Their Nearest Neighbors", save_path="original_images_and_nearest_neighbors.png")
     
-    plot_images_with_neighbors(images, nearest_neighbors)
-    
 
 
-
-def find_nearest_neighbors(query_representations: torch.Tensor, reference_representations: torch.Tensor, k: int = 5):
+def find_neighbors(
+        query_representations: torch.Tensor,
+        reference_representations: torch.Tensor,
+        k: int = 5, furthest: bool = False
+        ):
     distances = torch.cdist(query_representations, reference_representations)
-    _, indices = distances.topk(k, dim=1, largest=False)
+    _, indices = distances.topk(k, dim=1, largest=furthest)
     return indices
     
     

@@ -128,7 +128,7 @@ def plot_transform_results(result: np.ndarray, labels: np.ndarray, title: str, x
     plt.show()
 
 
-def plot_images_with_neighbors(images, nearest_neighbors, class_names=None, save_path=None):
+def plot_images_with_neighbors(images, nearest_neighbors, title: str, class_names=None, save_path=None):
     """
     Plot original images alongside their nearest neighbors.
     
@@ -167,7 +167,7 @@ def plot_images_with_neighbors(images, nearest_neighbors, class_names=None, save
                 axes[i, j + 1].set_title(f'Neighbor {j + 1}', fontsize=10)
             axes[i, j + 1].axis('off')
     
-    plt.suptitle('Original Images and Their Nearest Neighbors', fontsize=16, fontweight='bold')
+    plt.suptitle(title, fontsize=16, fontweight='bold')
     plt.tight_layout()
     
     if save_path:
