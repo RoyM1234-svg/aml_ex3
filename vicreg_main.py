@@ -325,7 +325,7 @@ def Q5():
     encoder = model.encoder
     encoder.to(device)
 
-    train_loader, test_loader = create_normalized_data_loaders()
+    train_loader, test_loader = create_normalized_data_loaders(shuffle_train=False)
     train_data_set: NormalizedDataSet = train_loader.dataset # type: ignore
 
     train_representations, _ = extract_representations(encoder, train_loader, device)
@@ -340,7 +340,6 @@ def Q5():
     no_generated_neighbors_model = VICReg(device=device_str)
     no_generated_neighbors_model.load_state_dict(torch.load('vicreg_model_no_generated_neighbors.pth', map_location=device))
     no_generated_neighbors_model.to(device)
-    
     
     train_representations, train_labels = extract_representations(no_generated_neighbors_model.encoder, train_loader, device)
     test_representations, test_labels = extract_representations(no_generated_neighbors_model.encoder, test_loader, device)
@@ -451,9 +450,9 @@ def main():
     # torch.save(model.state_dict(), 'vicreg_model_no_variance_loss.pth')
 
     # Q4()
-    # Q5()
+    Q5()
 
-    Q7()
+    # Q7()
 
     
     
