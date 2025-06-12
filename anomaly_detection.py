@@ -12,17 +12,6 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc
 
 def compute_knn_inverse_density(train_representations, test_representations, k=2):
-    """
-    Compute inverse density scores using kNN with FAISS.
-    
-    Args:
-        train_representations: Reference representations from CIFAR10 training set (torch.Tensor)
-        test_representations: Test representations (CIFAR10 + MNIST) (torch.Tensor)
-        k: Number of nearest neighbors
-        
-    Returns:
-        inverse_density_scores: Array of inverse density scores (average L2 distance to k neighbors)
-    """
     train_representations = train_representations.cpu().numpy().astype(np.float32)
     test_representations = test_representations.cpu().numpy().astype(np.float32)
     
@@ -35,7 +24,6 @@ def compute_knn_inverse_density(train_representations, test_representations, k=2
     inverse_density_scores = np.mean(distances, axis=1)
     
     return inverse_density_scores
-
 
 def Q1_helper(model: VICReg,
               device: torch.device,
@@ -83,7 +71,6 @@ def Q1_helper(model: VICReg,
     
     return results
     
-
 def Q2(vicreg_results, no_generated_neighbors_results):
     plt.figure(figsize=(8, 6))
     
@@ -116,7 +103,6 @@ def Q2(vicreg_results, no_generated_neighbors_results):
     print(f"VICReg No Generated Neighbors: {auc2:.4f}")
     print(f"Difference: {auc1 - auc2:.4f}")
 
-
 def Q1():
     device_str = "cuda" if torch.cuda.is_available() else "cpu"
     device = torch.device(device_str)
@@ -145,7 +131,6 @@ def Q1():
     no_generated_neighbors_results = Q1_helper(no_generated_neighbors_model, device, "VICReg (no generated neighbors)", cifar10_train_loader, cifar10_test_loader, mnist_test_loader)
 
     return vicreg_results, no_generated_neighbors_results
-
 
 def get_top_indices(scores, n=7):
     return np.argsort(scores)[-n:][::-1]
@@ -187,7 +172,6 @@ def plot_top_anomalous_images(vicreg_images, no_gen_neighbors_images):
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.savefig("top_7_anomalous_samples.png", dpi=300)
     
-
 def main():
     vicreg_results, no_generated_neighbors_results = Q1()
     Q2(vicreg_results, no_generated_neighbors_results)
