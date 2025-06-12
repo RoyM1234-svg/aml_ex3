@@ -157,11 +157,17 @@ def get_7_most_anomalous_images(results):
     cifar_test_set = cifar10_test_loader.dataset
     mnist_test_set = mnist_test_loader.dataset
 
-    all_test_set = torch.utils.data.ConcatDataset([cifar_test_set, mnist_test_set])
-
+    cifar_len = len(cifar_test_set)
+    
     top_indices = get_top_indices(results['inverse_density_scores'], 7)
 
-    top_images = [all_test_set.get_image_by_index(i) for i in top_indices] # type: ignore
+    top_images = []
+    for idx in top_indices:
+        if idx < cifar_len:
+            image = cifar_test_set.get_image_by_index(idx)
+        else:
+            image = mnist_test_set.get_image_by_index(idx - cifar_len)
+        top_images.append(image)
 
     return top_images
 
