@@ -144,11 +144,7 @@ def plot_transform_results(result: np.ndarray, labels: np.ndarray, title: str, x
     plt.show()
 
 
-def plot_images_with_neighbors(images, nearest_neighbors, title: str, class_names=None, save_path=None):
-    if class_names is None:
-        class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer', 
-                       'dog', 'frog', 'horse', 'ship', 'truck']
-    
+def plot_images_with_neighbors(images, nearest_neighbors, title: str, class_names, save_path=None):
     num_images = len(images)
     num_neighbors = len(nearest_neighbors[0]) if nearest_neighbors else 0
     

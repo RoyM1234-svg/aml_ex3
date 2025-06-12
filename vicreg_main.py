@@ -228,8 +228,6 @@ def Q3():
     train_linear_probing_model(
         encoder.get_encoder_dim(), train_representations, train_labels, test_representations, test_labels, device)
         
-
-
 def train_model_with_no_variance_loss():
     model = train_model(mu=0.0)
     return model
@@ -350,7 +348,6 @@ def create_neighbors_array(representations: torch.Tensor, k: int = 3) -> torch.T
 
     return torch.from_numpy(neighbor_indices)
 
-
 def Q7_helper(model: VICReg,
               device: torch.device,
               images: list[Image.Image],
@@ -406,7 +403,6 @@ def Q7():
     no_generated_neighbors_model.to(device)
     Q7_helper(no_generated_neighbors_model, device, images, labels, train_loader, train_representations, "VICReg with No Generated Neighbors")
 
-
 def find_neighbors(
         query_representations: torch.Tensor,
         reference_representations: torch.Tensor,
@@ -424,20 +420,19 @@ def find_neighbors(
     
     return indices
       
-
 def main():
-    # # train model
-    # model = train_model()
-    # torch.save(model.state_dict(), 'vicreg_model.pth')
+    # train model
+    model = train_model()
+    torch.save(model.state_dict(), 'vicreg_model.pth')
 
-    # Q2()
-    # Q3()
+    Q2()
+    Q3()
 
-    # model = train_model_with_no_variance_loss()
-    # torch.save(model.state_dict(), 'vicreg_model_no_variance_loss.pth')
+    model = train_model_with_no_variance_loss()
+    torch.save(model.state_dict(), 'vicreg_model_no_variance_loss.pth')
 
-    # Q4()
-    # Q5()
+    Q4()
+    Q5()
     Q7()
 
     

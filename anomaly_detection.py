@@ -150,7 +150,7 @@ def Q1():
     return vicreg_results, no_generated_neighbors_results
 def main():
     vicreg_results, no_generated_neighbors_results = Q1()
-    
+    Q3(vicreg_results, no_generated_neighbors_results)
 
 if __name__ == "__main__":
     main()
