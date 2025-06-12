@@ -3,6 +3,9 @@ from torchvision.datasets import CIFAR10
 from torchvision.transforms import Compose, ToTensor
 import numpy as np
 import torch
+from torchvision.datasets import MNIST
+from typing import Union
+from torchvision.datasets import VisionDataset
 
 class DualAugmentDataSet(Dataset):
     def __init__(self, base_dataset: CIFAR10, transform: Compose):
@@ -22,7 +25,7 @@ class DualAugmentDataSet(Dataset):
 
 
 class NormalizedDataSet(Dataset):
-    def __init__(self, base_dataset: CIFAR10, transform: Compose):
+    def __init__(self, base_dataset: VisionDataset, transform: Compose):
         self.base_dataset = base_dataset
         self.transform = transform
 

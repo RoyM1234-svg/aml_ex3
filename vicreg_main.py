@@ -2,7 +2,7 @@ import torch
 from tqdm import tqdm
 from custom_datasets import NeighborPairDataset, NormalizedDataSet
 from models import VICReg
-from utils import choose_image_from_each_class, create_normalized_data_loaders, create_data_for_veicreg, plot_vicreg_losses, plot_transform_results
+from utils import choose_image_from_each_class, create_normalized_data_loaders, create_data_for_veicreg, plot_vicreg_losses, plot_transform_results, extract_representations
 from vicreg_loss import VICRegLoss
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
@@ -228,17 +228,7 @@ def Q3():
     train_linear_probing_model(
         encoder.get_encoder_dim(), train_representations, train_labels, test_representations, test_labels, device)
         
-def extract_representations(encoder, loader, device) -> Tuple[torch.Tensor, torch.Tensor]:
-    encoder.eval()
-    representations = []
-    labels = []
-    with torch.no_grad():
-        for x, label in tqdm(loader):
-            x = x.to(device)
-            y = encoder(x)
-            representations.append(y)
-            labels.append(label)
-    return torch.cat(representations, dim=0), torch.cat(labels, dim=0)
+
 
 def train_model_with_no_variance_loss():
     model = train_model(mu=0.0)

@@ -5,6 +5,9 @@ from torch.utils.data import DataLoader
 from PIL import Image
 import matplotlib.pyplot as plt
 import numpy as np
+from typing import Tuple
+import torch
+from tqdm import tqdm
 
 def choose_image_from_each_class() -> tuple[list[Image.Image], list[int]]:
     dataset = CIFAR10(root='./data', train=True, download=True)
@@ -44,6 +47,19 @@ def create_normalized_data_loaders(batch_size = 256, shuffle_train: bool = True)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle_train)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
     return train_loader, test_loader
+
+
+def extract_representations(encoder, loader, device) -> Tuple[torch.Tensor, torch.Tensor]:
+    encoder.eval()
+    representations = []
+    labels = []
+    with torch.no_grad():
+        for x, label in tqdm(loader):
+            x = x.to(device)
+            y = encoder(x)
+            representations.append(y)
+            labels.append(label)
+    return torch.cat(representations, dim=0), torch.cat(labels, dim=0)
 
 
 def plot_vicreg_losses(train_losses, test_losses, batch_numbers, test_epochs, batches_per_epoch):
@@ -129,15 +145,6 @@ def plot_transform_results(result: np.ndarray, labels: np.ndarray, title: str, x
 
 
 def plot_images_with_neighbors(images, nearest_neighbors, title: str, class_names=None, save_path=None):
-    """
-    Plot original images alongside their nearest neighbors.
-    
-    Args:
-        images: List of PIL Images (original images)
-        nearest_neighbors: List of lists, where each inner list contains neighbor PIL Images
-        class_names: Optional list of class names for labeling
-        save_path: Optional path to save the plot
-    """
     if class_names is None:
         class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer', 
                        'dog', 'frog', 'horse', 'ship', 'truck']
@@ -145,22 +152,18 @@ def plot_images_with_neighbors(images, nearest_neighbors, title: str, class_name
     num_images = len(images)
     num_neighbors = len(nearest_neighbors[0]) if nearest_neighbors else 0
     
-    # Create subplot grid: each row shows original + neighbors
     fig, axes = plt.subplots(num_images, num_neighbors + 1, 
                             figsize=((num_neighbors + 1) * 2, num_images * 2))
     
-    # Handle case where there's only one image
     if num_images == 1:
         axes = axes.reshape(1, -1)
     
     for i in range(num_images):
-        # Plot original image
         axes[i, 0].imshow(images[i])
         axes[i, 0].set_title(f'Original\nClass: {class_names[i] if i < len(class_names) else i}', 
                             fontsize=10, fontweight='bold')
         axes[i, 0].axis('off')
         
-        # Plot nearest neighbors
         for j in range(num_neighbors):
             if j < len(nearest_neighbors[i]):
                 axes[i, j + 1].imshow(nearest_neighbors[i][j])
