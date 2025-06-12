@@ -35,18 +35,13 @@ def compute_knn_inverse_density(train_representations, test_representations, k=2
     return inverse_density_scores
 
 
-def Q1_helper(model: VICReg, device: torch.device, model_name: str):
-    cifar10_train_loader, cifar10_test_loader = create_normalized_data_loaders(shuffle_train=False)
-
-    mnist_preprocess = transforms.Compose([
-        transforms.Resize((32, 32)),  # Resize to CIFAR10 size
-        transforms.Lambda(lambda x: x.convert('RGB'))  # Convert grayscale to RGB
-    ])
-    mnist_test = datasets.MNIST(root='./data', train=False, download=True,
-                               transform=mnist_preprocess)
-    mnist_test_dataset = NormalizedDataSet(mnist_test, test_transform)
-    mnist_test_loader = DataLoader(mnist_test_dataset, batch_size=256, shuffle=False)
-
+def Q1_helper(model: VICReg,
+              device: torch.device,
+              model_name: str,
+              cifar10_train_loader: DataLoader,
+              cifar10_test_loader: DataLoader,
+              mnist_test_loader: DataLoader):
+    
     encoder = model.encoder
 
     cifar10_train_representations, _ = extract_representations(encoder, cifar10_train_loader, device)
@@ -82,7 +77,24 @@ def Q1():
     vicreg_model.load_state_dict(torch.load('vicreg_model.pth', map_location=device))
     vicreg_model.to(device)
 
-    Q1_helper(vicreg_model, device, "VICReg")
+    cifar10_train_loader, cifar10_test_loader = create_normalized_data_loaders(shuffle_train=False)
+
+    mnist_preprocess = transforms.Compose([
+        transforms.Resize((32, 32)),  
+        transforms.Lambda(lambda x: x.convert('RGB'))
+    ])
+    mnist_test = datasets.MNIST(root='./data', train=False, download=True,
+                               transform=mnist_preprocess)
+    mnist_test_dataset = NormalizedDataSet(mnist_test, test_transform)
+    mnist_test_loader = DataLoader(mnist_test_dataset, batch_size=256, shuffle=False)
+
+    Q1_helper(vicreg_model, device, "VICReg", cifar10_train_loader, cifar10_test_loader, mnist_test_loader)
+
+    no_generated_neighbors_model = VICReg(device=device_str)
+    no_generated_neighbors_model.load_state_dict(torch.load('vicreg_model_no_generated_neighbors.pth', map_location=device))
+    no_generated_neighbors_model.to(device)
+
+    Q1_helper(no_generated_neighbors_model, device, "VICReg (no generated neighbors)", cifar10_train_loader, cifar10_test_loader, mnist_test_loader)
 
 
 def main():
